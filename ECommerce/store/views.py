@@ -43,9 +43,9 @@ def store(request):
     search_query = request.GET.get('search', '').strip()
     page_number = request.GET.get('page', 1)
     if categoryID:
-        products = Product.get_all_products_by_categoryid(categoryID)
+        products = Product.objects.select_related('category').filter(category=categoryID)
     else:
-        products = Product.get_all_products()
+        products = Product.objects.select_related('category').all()
     # Apply search filter if present
     if search_query:
         products = products.filter(name__icontains=search_query)
@@ -142,7 +142,7 @@ class OrderView(View):
 
     def get(self , request ):
         customer = request.session.get('customer')
-        orders = Order.get_orders_by_customer(customer)
+        orders = Order.objects.select_related('product').filter(customer=customer).order_by('-date')
         print(orders)
         return render(request , 'orders.html'  , {'orders' : orders})
 
