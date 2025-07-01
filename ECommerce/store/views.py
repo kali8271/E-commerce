@@ -550,3 +550,23 @@ def request_order_action(request, order_id, action_type):
         messages.success(request, f'{action_type.title()} request submitted for Order #{order.id}.')
     return redirect('profile')
     
+@staff_member_required
+def export_products_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=products.csv'
+    writer = csv.writer(response)
+    writer.writerow(['ID', 'Name', 'Price', 'Category', 'Brand', 'Tags', 'Stock', 'Description'])
+    for product in Product.objects.select_related('category', 'brand').prefetch_related('tags').all():
+        tags = ', '.join([tag.name for tag in product.tags.all()])
+        writer.writerow([
+            product.id,
+            product.name,
+            product.price,
+            product.category.name if product.category else '',
+            product.brand.name if product.brand else '',
+            tags,
+            getattr(product, 'stock', ''),
+            product.description
+        ])
+    return response
+    

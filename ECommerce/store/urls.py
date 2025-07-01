@@ -38,5 +38,6 @@ urlpatterns = [
     path('compare/', compare_products, name='compare_products'),
     path('dashboard/analytics/', admin_analytics, name='admin_analytics'),
     path('dashboard/analytics/export-orders/', export_orders_csv, name='export_orders_csv'),
+    path('dashboard/analytics/export-products/', export_products_csv, name='export_products_csv'),
     path('order/<int:order_id>/request/<str:action_type>/', request_order_action, name='request_order_action'),
 ]
