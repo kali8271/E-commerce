@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3>Your Wishlist</h3>
+    {% if wishlist_items %}
+    <div class="row">
+        {% for item in wishlist_items %}
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <img class="card-img-top" src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.product.name }}</h5>
+                    <p class="card-text">{{ item.product.description }}</p>
+                    <p class="card-text"><b>{{ item.product.price }}</b></p>
+                    <button class="btn btn-danger remove-wishlist" data-product-id="{{ item.product.id }}">Remove</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>You have no items in your wishlist.</p>
+    {% endif %}
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.remove-wishlist').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var productId = this.getAttribute('data-product-id');
+                fetch('/wishlist/remove/' + productId + '/', {method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}})
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.success) {
+                            location.reload();
+                        }
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %} 
