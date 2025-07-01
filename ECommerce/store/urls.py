@@ -3,6 +3,7 @@ from django.urls import path
 from .views import *
 from .middlewares.auth import session_auth_required
 from django.contrib.auth import views as auth_views
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 urlpatterns = [
@@ -29,4 +30,6 @@ urlpatterns = [
     path('api/products/', ProductListAPI.as_view(), name='api_products'),
     path('api/categories/', CategoryListAPI.as_view(), name='api_categories'),
     path('api/orders/', OrderListAPI.as_view(), name='api_orders'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

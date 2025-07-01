@@ -14,6 +14,7 @@ from rest_framework import generics, permissions
 from .serializers import ProductSerializer, CategorySerializer, OrderSerializer
 from django.contrib.auth.views import PasswordResetView
 from django.core.cache import cache
+from rest_framework.permissions import IsAuthenticated
 
 class Index(View):
 
@@ -329,11 +330,13 @@ class CategoryListAPI(generics.ListAPIView):
 
 class OrderListAPI(generics.ListAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user_id = self.request.session.get('customer')
-        return Order.objects.filter(customer_id=user_id)
+        user = self.request.user
+        if user.is_authenticated:
+            return Order.objects.filter(customer__email=user.email)
+        return Order.objects.none()
 
 class DebugPasswordResetView(PasswordResetView):
     def form_valid(self, form):
