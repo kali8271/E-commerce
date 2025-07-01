@@ -6,12 +6,52 @@
 {% load custom_filter %}
 {% load i18n %}
 
+<head>
+  <meta name="theme-color" content="#007bff">
+  <link rel="shortcut icon" href="/static/logo.png">
+</head>
+
 <!-- Hero Banner -->
 <div class="jumbotron jumbotron-fluid text-white" style="background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);">
   <div class="container py-5">
     <h1 class="display-4 font-weight-bold">Welcome to E-Shop!</h1>
     <p class="lead">Discover fresh groceries, best deals, and trending products. Shop smart, shop modern.</p>
     <a href="#products" class="btn btn-lg btn-light font-weight-bold">Shop Now</a>
+  </div>
+</div>
+
+<!-- Product Carousel -->
+<div class="container mb-5">
+  <div id="featuredCarousel" class="carousel slide" data-ride="carousel">
+    <ol class="carousel-indicators">
+      {% for product in products|slice:':5' %}
+      <li data-target="#featuredCarousel" data-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>
+      {% endfor %}
+    </ol>
+    <div class="carousel-inner">
+      {% for product in products|slice:':5' %}
+      <div class="carousel-item {% if forloop.first %}active{% endif %}">
+        <div class="row align-items-center">
+          <div class="col-md-6 text-center">
+            <a href="/product/{{ product.id }}/"><img src="{{ product.image.url }}" class="d-block w-75 mx-auto rounded shadow" alt="{{ product.name }} image"></a>
+          </div>
+          <div class="col-md-6">
+            <h2 class="font-weight-bold">{{ product.name }}</h2>
+            <p class="lead"><b>{{ product.price|currency }}</b></p>
+            <a href="/product/{{ product.id }}/" class="btn btn-primary btn-lg">View Product</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <a class="carousel-control-prev" href="#featuredCarousel" role="button" data-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="sr-only">Previous</span>
+    </a>
+    <a class="carousel-control-next" href="#featuredCarousel" role="button" data-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="sr-only">Next</span>
+    </a>
   </div>
 </div>
 
@@ -39,7 +79,7 @@
     {% for product in products|slice:':4' %}
     <div class="col-12 col-md-3 mb-4">
       <div class="card h-100 shadow-sm">
-        <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}}"></a>
+        <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}} image"></a>
         <div class="card-body">
           <h5 class="card-title"><a href="/product/{{ product.id }}/">{{product.name}}</a></h5>
           <p class="card-text"><b>{{product.price|currency}}</b></p>
@@ -50,13 +90,31 @@
   </div>
 </div>
 
-<!-- Search bar -->
+<!-- Search bar with price filter -->
 <div class="container mb-4">
   <form method="get" action="#products" class="mb-3">
     <div class="input-group">
       <input type="text" name="search" class="form-control" placeholder="{% trans 'Search products...' %}" value="{{ search_query }}">
       {% if selected_category %}
         <input type="hidden" name="category" value="{{ selected_category }}">
+      {% endif %}
+      <input type="number" name="min_price" class="form-control ml-2" placeholder="Min Price" value="{{ min_price }}" min="0">
+      <input type="number" name="max_price" class="form-control ml-2" placeholder="Max Price" value="{{ max_price }}" min="0">
+      {% if brands %}
+        <select name="brand" class="form-control ml-2">
+          <option value="">All Brands</option>
+          {% for brand in brands %}
+            <option value="{{ brand.id }}" {% if brand.id|stringformat:'s' == selected_brand %}selected{% endif %}>{{ brand.name }}</option>
+          {% endfor %}
+        </select>
+      {% endif %}
+      {% if tags %}
+        <select name="tag" class="form-control ml-2">
+          <option value="">All Tags</option>
+          {% for tag in tags %}
+            <option value="{{ tag.id }}" {% if tag.id|stringformat:'s' == selected_tag %}selected{% endif %}>{{ tag.name }}</option>
+          {% endfor %}
+        </select>
       {% endif %}
       <div class="input-group-append">
         <button class="btn btn-outline-secondary" type="submit">{% trans 'Search' %}</button>
@@ -72,10 +130,17 @@
     {% for product in products %}
     <div class="col-12 col-md-3 mb-4">
       <div class="card h-100 shadow-sm" id="{{product.id}}">
-        <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}}"></a>
+        <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}} image"></a>
         <div class="card-body">
           <h5 class="card-title"><a href="/product/{{ product.id }}/">{{product.name}}</a></h5>
           <p class="card-text"><b>{{product.price|currency}}</b></p>
+          {% if product.tags.all %}
+            <div class="mb-2">
+              {% for tag in product.tags.all %}
+                <span class="badge badge-info mr-1">{{ tag.name }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
         <div class="card-footer p-0 no-gutters bg-white border-0">
           <div class="d-flex justify-content-between align-items-center">
@@ -102,6 +167,7 @@
             </form>
             {% endif %}
             <button class="btn btn-outline-danger btn-sm ml-2 wishlist-btn" data-product-id="{{ product.id }}">❤ Wishlist</button>
+            <a href="/compare/add/{{ product.id }}/" class="btn btn-outline-primary btn-sm ml-2">Compare</a>
           </div>
         </div>
       </div>
@@ -137,6 +203,68 @@
   </nav>
   {% endif %}
 </div>
+
+<!-- Testimonials -->
+<div class="container mb-5">
+  <h3 class="mb-4">What Our Customers Say</h3>
+  <div class="row">
+    {% for review in testimonials %}
+    <div class="col-12 col-md-6 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="mb-2">
+            <span class="font-weight-bold">{{ review.customer.first_name }}</span> on <a href="/product/{{ review.product.id }}/">{{ review.product.name }}</a>
+          </div>
+          <div class="mb-2 text-warning">
+            {% for i in "12345"|slice:":review.rating" %}★{% endfor %}{% for i in "12345"|slice:"review.rating:" %}☆{% endfor %}
+          </div>
+          <div class="mb-2">{{ review.review }}</div>
+          <small class="text-muted">{{ review.created_at|date:"M d, Y H:i" }}</small>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12"><p>No testimonials yet. Be the first to review a product!</p></div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Recently Viewed Products -->
+{% if recently_viewed %}
+<div class="container mb-5">
+  <h3 class="mb-4">Recently Viewed Products</h3>
+  <div class="row">
+    {% for product in recently_viewed %}
+    <div class="col-12 col-md-2 mb-4">
+      <div class="card h-100 shadow-sm">
+        <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}} image"></a>
+        <div class="card-body p-2">
+          <h6 class="card-title mb-1"><a href="/product/{{ product.id }}/">{{product.name}}</a></h6>
+          <p class="card-text mb-0"><b>{{product.price|currency}}</b></p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if recommended_products %}
+  <h3 class="mt-5">Recommended for You</h3>
+  <div class="row">
+    {% for product in recommended_products %}
+      <div class="col-12 col-md-2 mb-4">
+        <div class="card h-100 shadow-sm">
+          <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}} image"></a>
+          <div class="card-body p-2">
+            <h6 class="card-title mb-1"><a href="/product/{{ product.id }}/">{{product.name}}</a></h6>
+            <span class="badge badge-primary">₹{{product.price}}</span>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

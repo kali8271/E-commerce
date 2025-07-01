@@ -11,7 +11,21 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
     integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-  <title>Ecommerce</title>
+  <title>{% block title %}E-Commerce Site{% endblock %}</title>
+  <meta name="description" content="A modern e-commerce platform for fresh groceries and more.">
+  <meta property="og:title" content="E-Commerce Site">
+  <meta property="og:description" content="A modern e-commerce platform for fresh groceries and more.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.build_absolute_uri|default:'' }}">
+  <meta property="og:image" content="/static/logo.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="E-Commerce Site">
+  <meta name="twitter:description" content="A modern e-commerce platform for fresh groceries and more.">
+  <meta name="twitter:image" content="/static/logo.png">
+  <meta name="theme-color" content="#007bff">
+  <link rel="shortcut icon" href="/static/logo.png">
+
+  <link rel="manifest" href="/static/manifest.json">
 
   <style>
     nav{
@@ -34,7 +48,7 @@
   <nav class="one-edge-shadow 
   sticky-top navbar 
   navbar-expand-lg
-   navbar-light bg-white">
+   navbar-light bg-white" role="navigation" aria-label="Main navigation">
     <a class="navbar-brand" href="/">E-Shop</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
       aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,6 +92,11 @@
           <a class="nav-link" href="/login">Login<span class="sr-only">(current)</span></a>
         </li>
         {% endif %}
+        {% if request.user.is_authenticated and request.user.is_staff %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'admin_analytics' %}">Analytics</a>
+          </li>
+        {% endif %}
 
 
 
@@ -113,6 +132,25 @@
 
     {% block content %}{% endblock %}
 
+  <!-- Newsletter Signup -->
+  <footer class="bg-light mt-5 pt-4 pb-2 border-top">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-6 mb-2 mb-md-0">
+          <h5 class="mb-2">Subscribe to our Newsletter</h5>
+          <form action="/newsletter-signup/" method="post" class="form-inline">
+            {% csrf_token %}
+            <input type="email" name="email" class="form-control mr-2 mb-2" placeholder="Enter your email" required>
+            <button type="submit" class="btn btn-primary mb-2">Subscribe</button>
+          </form>
+        </div>
+        <div class="col-md-6 text-md-right">
+          <small class="text-muted">&copy; {{ now|date:'Y' }} E-Shop. All rights reserved.</small>
+        </div>
+      </div>
+    </div>
+  </footer>
+
   <!-- Optional JavaScript -->
   <!-- jQuery first, then Popper.js, then Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
@@ -124,6 +162,13 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
     integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
     crossorigin="anonymous"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/static/service-worker.js');
+      });
+    }
+  </script>
 </body>
 
 </html>

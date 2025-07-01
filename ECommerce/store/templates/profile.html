@@ -37,6 +37,25 @@
                         <td>{{ order.date }}</td>
                         <td>{% if order.status %}Completed{% else %}Pending{% endif %}</td>
                     </tr>
+                    <tr>
+                        <td colspan="6">
+                            <img src="{{ order.product.image.url }}" alt="{{ order.product.name }} image" class="order-img">
+                            {% if not order.requests.exists %}
+                                <form method="post" action="{% url 'request_order_action' order.id 'cancellation' %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="text" name="reason" placeholder="Reason (optional)" class="form-control mb-1" style="width:200px;display:inline-block;">
+                                    <button type="submit" class="btn btn-warning btn-sm">Request Cancellation</button>
+                                </form>
+                                <form method="post" action="{% url 'request_order_action' order.id 'return' %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <input type="text" name="reason" placeholder="Reason (optional)" class="form-control mb-1" style="width:200px;display:inline-block;">
+                                    <button type="submit" class="btn btn-info btn-sm">Request Return</button>
+                                </form>
+                            {% else %}
+                                <span class="badge badge-secondary">Request submitted: {{ order.requests.first.request_type|title }} ({{ order.requests.first.status|title }})</span>
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>

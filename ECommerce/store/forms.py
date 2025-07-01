@@ -1,5 +1,5 @@
 from django import forms
-from .models import Customer, Review
+from .models import Customer, Review, ProductQuestion
 
 class SignupForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, min_length=6)
@@ -52,4 +52,12 @@ class ReviewForm(forms.ModelForm):
         widgets = {
             'rating': forms.Select(choices=[(i, i) for i in range(1, 6)]),
             'review': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class ProductQuestionForm(forms.ModelForm):
+    class Meta:
+        model = ProductQuestion
+        fields = ['question']
+        widgets = {
+            'question': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Ask a question about this product...'}),
         } 

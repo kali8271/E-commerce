@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Product Comparison</h2>
+  {% if products %}
+  <div class="table-responsive">
+    <table class="table table-bordered text-center align-middle">
+      <thead class="thead-light">
+        <tr>
+          <th>Attribute</th>
+          {% for product in products %}
+          <th>
+            <a href="/product/{{ product.id }}/">{{ product.name }}</a>
+            <br>
+            <a href="/compare/remove/{{ product.id }}/" class="btn btn-sm btn-danger mt-2">Remove</a>
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Image</th>
+          {% for product in products %}
+          <td><img src="{{ product.image.url }}" alt="{{ product.name }}" style="height: 100px;"></td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Price</th>
+          {% for product in products %}
+          <td>{{ product.price|currency }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Brand</th>
+          {% for product in products %}
+          <td>{{ product.brand.name if product.brand else '—' }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Category</th>
+          {% for product in products %}
+          <td>{{ product.category.name }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Tags</th>
+          {% for product in products %}
+          <td>
+            {% for tag in product.tags.all %}
+              <span class="badge badge-info mr-1">{{ tag.name }}</span>
+            {% empty %}—{% endfor %}
+          </td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <th>Description</th>
+          {% for product in products %}
+          <td>{{ product.description }}</td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>No products selected for comparison.</p>
+  {% endif %}
+  <a href="/" class="btn btn-secondary mt-3">Back to Home</a>
+</div>
+{% endblock %} 

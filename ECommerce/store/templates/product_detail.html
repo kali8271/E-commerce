@@ -1,10 +1,14 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<head>
+  <meta name="theme-color" content="#007bff">
+  <link rel="shortcut icon" href="/static/logo.png">
+</head>
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-6">
-            <img src="{{ product.image.url }}" class="img-fluid" alt="{{ product.name }}">
+            <img src="{{ product.image.url }}" class="img-fluid" alt="{{ product.name }} image">
         </div>
         <div class="col-md-6">
             <h2>{{ product.name }}</h2>
@@ -39,6 +43,26 @@
                 {{ form.as_p }}
                 <button type="submit" class="btn btn-primary">Submit Review</button>
             </form>
+            <h4>Questions & Answers</h4>
+            <ul class="list-group mb-3">
+                {% for q in answered_questions %}
+                <li class="list-group-item">
+                    <strong>Q:</strong> {{ q.question }}<br>
+                    <strong>A:</strong> {{ q.answer }}
+                </li>
+                {% empty %}
+                <li class="list-group-item">No questions yet.</li>
+                {% endfor %}
+            </ul>
+            {% if request.session.customer %}
+            <form method="post" class="mb-3">
+                {% csrf_token %}
+                {{ question_form.question }}
+                <button type="submit" name="question" class="btn btn-outline-primary btn-sm">Ask Question</button>
+            </form>
+            {% else %}
+            <p><a href="{% url 'login' %}">Log in</a> to ask a question about this product.</p>
+            {% endif %}
         </div>
     </div>
     <!-- Related Products -->
@@ -62,5 +86,21 @@
             </div>
         </div>
     </div>
+    {% if recommended_products %}
+    <h4 class="mt-4">Recommended for You</h4>
+    <div class="row">
+        {% for product in recommended_products %}
+        <div class="col-12 col-md-3 mb-4">
+            <div class="card h-100 shadow-sm">
+                <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}} image"></a>
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1"><a href="/product/{{ product.id }}/">{{product.name}}</a></h6>
+                    <span class="badge badge-primary">₹{{product.price}}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %} 

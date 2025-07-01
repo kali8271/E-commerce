@@ -13,10 +13,24 @@ class Category(models.Model):
     def __str__(self) -> str:
         return self.name
 
+class Brand(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
 class Product(models.Model):
     name = models.CharField(max_length=100)
     price = models.IntegerField(default=0)
     category = models.ForeignKey(Category,on_delete=models.CASCADE,default=1)
+    brand = models.ForeignKey('Brand', on_delete=models.SET_NULL, null=True, blank=True)
+    tags = models.ManyToManyField('Tag', blank=True)
     description = models.CharField(max_length=200, default=' ')
     image = models.ImageField(upload_to='Products/')
 
@@ -24,6 +38,7 @@ class Product(models.Model):
     def get_all_products_by_categoryid(cls, category_id):
         return cls.objects.filter(category=category_id)
 
+    @classmethod
     def get_products_by_id(cls, ids):
         return cls.objects.filter(id__in=ids)
     
@@ -116,3 +131,46 @@ class UserActivity(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.action} at {self.timestamp}"
+
+class NewsletterSubscriber(models.Model):
+    email = models.EmailField(unique=True)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email
+
+class OrderRequest(models.Model):
+    REQUEST_TYPE_CHOICES = [
+        ('cancellation', 'Cancellation'),
+        ('return', 'Return'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('processed', 'Processed'),
+    ]
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='requests')
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    request_type = models.CharField(max_length=20, choices=REQUEST_TYPE_CHOICES)
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.request_type.title()} request for Order #{self.order.id} by {self.customer.email}"
+
+class ProductQuestion(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('answered', 'Answered'),
+    ]
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='questions')
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    question = models.TextField()
+    answer = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Q: {self.question[:30]}... ({self.get_status_display()})"

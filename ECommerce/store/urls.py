@@ -32,4 +32,11 @@ urlpatterns = [
     path('api/orders/', OrderListAPI.as_view(), name='api_orders'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('newsletter-signup/', newsletter_signup, name='newsletter_signup'),
+    path('compare/add/<int:product_id>/', add_to_compare, name='add_to_compare'),
+    path('compare/remove/<int:product_id>/', remove_from_compare, name='remove_from_compare'),
+    path('compare/', compare_products, name='compare_products'),
+    path('dashboard/analytics/', admin_analytics, name='admin_analytics'),
+    path('dashboard/analytics/export-orders/', export_orders_csv, name='export_orders_csv'),
+    path('order/<int:order_id>/request/<str:action_type>/', request_order_action, name='request_order_action'),
 ]
