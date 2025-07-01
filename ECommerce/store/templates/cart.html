@@ -42,6 +42,20 @@
             </tfoot>
         </table>
         <hr>
+        <!-- Coupon code form -->
+        <form method="get" action="/cart" class="form-inline mb-3">
+            <div class="form-group mr-2">
+                <input type="text" name="coupon" class="form-control" placeholder="Enter coupon code" value="{{ coupon.code|default:'' }}">
+            </div>
+            <button type="submit" class="btn btn-info">Apply Coupon</button>
+            {% if coupon %}
+                <span class="ml-3 text-success">Coupon <b>{{ coupon.code }}</b> applied!</span>
+            {% endif %}
+        </form>
+        {% if discount and discount > 0 %}
+        <div class="alert alert-success">Discount: -{{ discount }}</div>
+        {% endif %}
+        <div class="alert alert-info">Total: {{ total }}</div>
         <div class="m-3 p-3">
             <a href="#" data-toggle="modal" data-target="#exampleModal" class="btn btn-outline-info border rounded  col-lg-3 float-right">Check out</a>
         </div>

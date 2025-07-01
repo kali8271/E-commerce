@@ -13,6 +13,7 @@ from django.utils.decorators import method_decorator
 from rest_framework import generics, permissions
 from .serializers import ProductSerializer, CategorySerializer, OrderSerializer
 from django.contrib.auth.views import PasswordResetView
+from django.core.cache import cache
 
 class Index(View):
 
@@ -37,18 +38,25 @@ def store(request):
     cart = request.session.get('cart')
     if not cart:
         request.session['cart'] = {}
-    products = None
-    categories = Category.get_all_categories()  # This calls the method you defined.
+    # Cache categories
+    categories = cache.get('categories')
+    if not categories:
+        categories = Category.get_all_categories()
+        cache.set('categories', categories, 60 * 10)  # Cache for 10 minutes
     categoryID = request.GET.get('category')
     search_query = request.GET.get('search', '').strip()
     page_number = request.GET.get('page', 1)
-    if categoryID:
-        products = Product.objects.select_related('category').filter(category=categoryID)
-    else:
-        products = Product.objects.select_related('category').all()
-    # Apply search filter if present
-    if search_query:
-        products = products.filter(name__icontains=search_query)
+    # Cache product list by category and search
+    cache_key = f'products_{categoryID}_{search_query}'
+    products = cache.get(cache_key)
+    if not products:
+        if categoryID:
+            products = Product.objects.select_related('category').filter(category=categoryID)
+        else:
+            products = Product.objects.select_related('category').all()
+        if search_query:
+            products = products.filter(name__icontains=search_query)
+        cache.set(cache_key, products, 60 * 5)  # Cache for 5 minutes
     # Pagination
     paginator = Paginator(products, 6)  # 6 products per page
     page_obj = paginator.get_page(page_number)
@@ -67,13 +75,25 @@ class Cart(View):
     def get(self, request):
         cart = CartHelper(request.session)
         items = cart.get_items()
+        coupon_code = request.GET.get('coupon') or request.session.get('coupon_code')
+        coupon = None
+        discount = 0
+        total = 0
         if items:
             ids = list(items.keys())
-            products = Product.get_products_by_id(ids)  # Pass 'ids' correctly here
-            print(products)
-            return render(request, 'cart.html', {'products': products})
+            products = Product.get_products_by_id(ids)
+            if coupon_code:
+                from .models import Coupon
+                try:
+                    coupon = Coupon.objects.get(code__iexact=coupon_code, active=True)
+                    request.session['coupon_code'] = coupon_code
+                except Coupon.DoesNotExist:
+                    coupon = None
+                    request.session['coupon_code'] = ''
+            total, discount = cart_total_with_coupon(products, items, coupon)
+            return render(request, 'cart.html', {'products': products, 'coupon': coupon, 'discount': discount, 'total': total})
         else:
-            return render(request, 'cart.html', {'products': []})
+            return render(request, 'cart.html', {'products': [], 'coupon': None, 'discount': 0, 'total': 0})
 
 
 
@@ -85,10 +105,17 @@ class CheckOut(View):
         cart = CartHelper(request.session)
         items = cart.get_items()
         products = Product.get_products_by_id(list(items.keys()))
-        print(address, phone, customer, items, products)
-
+        coupon_code = request.session.get('coupon_code')
+        coupon = None
+        if coupon_code:
+            from .models import Coupon
+            try:
+                coupon = Coupon.objects.get(code__iexact=coupon_code, active=True)
+            except Coupon.DoesNotExist:
+                coupon = None
+        total, discount = cart_total_with_coupon(products, items, coupon)
+        print(address, phone, customer, items, products, coupon, discount, total)
         for product in products:
-            print(items.get(str(product.id)))
             order = Order(customer=Customer(id=customer),
                           product=product,
                           price=product.price,
@@ -97,7 +124,8 @@ class CheckOut(View):
                           quantity=items.get(str(product.id)))
             order.save()
         cart.clear()
-        messages.success(request, 'Order placed successfully!')
+        request.session['coupon_code'] = ''
+        messages.success(request, f'Order placed successfully! Discount applied: {discount}')
         return redirect('cart')
     
 class Login(View):
@@ -237,11 +265,14 @@ class ProductDetailView(View):
         reviews = product.reviews.select_related('customer').order_by('-created_at')
         form = ReviewForm()
         avg_rating = product.average_rating()
+        # Related products: same category, exclude current
+        related_products = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
         return render(request, 'product_detail.html', {
             'product': product,
             'reviews': reviews,
             'form': form,
-            'avg_rating': avg_rating
+            'avg_rating': avg_rating,
+            'related_products': related_products
         })
 
     def post(self, request, product_id):
@@ -262,11 +293,13 @@ class ProductDetailView(View):
             return redirect('product_detail', product_id=product.id)
         reviews = product.reviews.select_related('customer').order_by('-created_at')
         avg_rating = product.average_rating()
+        related_products = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
         return render(request, 'product_detail.html', {
             'product': product,
             'reviews': reviews,
             'form': form,
-            'avg_rating': avg_rating
+            'avg_rating': avg_rating,
+            'related_products': related_products
         })
     
 class OrderStatusUpdateView(View):
@@ -306,4 +339,14 @@ class DebugPasswordResetView(PasswordResetView):
     def form_valid(self, form):
         print("Password reset requested for:", form.cleaned_data["email"])
         return super().form_valid(form)
+    
+def cart_total_with_coupon(products, cart, coupon):
+    total = sum([product.price * cart.get(str(product.id), 0) for product in products])
+    discount = 0
+    if coupon:
+        if coupon.discount_type == 'amount':
+            discount = float(coupon.discount_value)
+        elif coupon.discount_type == 'percent':
+            discount = total * float(coupon.discount_value) / 100
+    return max(total - discount, 0), discount
     

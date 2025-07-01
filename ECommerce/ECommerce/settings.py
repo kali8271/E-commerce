@@ -133,3 +133,19 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'ansari9801361787@gmail.com'
 EMAIL_HOST_PASSWORD = 'hrfy bwhw zerp tfwh'
 DEFAULT_FROM_EMAIL = 'ansari9801361787@gmail.com'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
