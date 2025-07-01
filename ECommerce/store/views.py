@@ -127,6 +127,9 @@ class CheckOut(View):
         cart.clear()
         request.session['coupon_code'] = ''
         messages.success(request, f'Order placed successfully! Discount applied: {discount}')
+        # Log activity
+        if customer:
+            UserActivity.objects.create(user=Customer.objects.get(id=customer), action='order', details=f'Order placed. Total: {total}, Discount: {discount}')
         return redirect('cart')
     
 class Login(View):
@@ -149,6 +152,8 @@ class Login(View):
                 if flag:
                     request.session['customer'] = customer.id
                     messages.success(request, 'Login successful!')
+                    # Log activity
+                    UserActivity.objects.create(user=customer, action='login', details='User logged in.')
                     if Login.return_url:
                         return HttpResponseRedirect(Login.return_url)
                     else:
@@ -187,6 +192,8 @@ class Signup(View):
             customer.password = make_password(form.cleaned_data['password'])
             customer.register()
             messages.success(request, 'Account created successfully! Please log in.')
+            # Log activity
+            UserActivity.objects.create(user=customer, action='signup', details='User signed up.')
             return redirect('login')
         else:
             return render(request, 'signup.html', {'form': form})
@@ -291,6 +298,8 @@ class ProductDetailView(View):
                 }
             )
             messages.success(request, 'Review submitted!')
+            # Log activity
+            UserActivity.objects.create(user=customer, action='review', details=f'Reviewed product {product.name} with rating {form.cleaned_data["rating"]}')
             return redirect('product_detail', product_id=product.id)
         reviews = product.reviews.select_related('customer').order_by('-created_at')
         avg_rating = product.average_rating()

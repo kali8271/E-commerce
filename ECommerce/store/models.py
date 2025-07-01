@@ -107,3 +107,12 @@ class Coupon(models.Model):
 
     def __str__(self):
         return self.code
+
+class UserActivity(models.Model):
+    user = models.ForeignKey(Customer, on_delete=models.CASCADE, null=True, blank=True)
+    action = models.CharField(max_length=100)
+    details = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.action} at {self.timestamp}"

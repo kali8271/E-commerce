@@ -4,111 +4,138 @@
 
 {% load cart %}
 {% load custom_filter %}
-<!-- body -->
-<div class="container-fluid mt-3">
-	<div class="row">
+{% load i18n %}
 
+<!-- Hero Banner -->
+<div class="jumbotron jumbotron-fluid text-white" style="background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%);">
+  <div class="container py-5">
+    <h1 class="display-4 font-weight-bold">Welcome to E-Shop!</h1>
+    <p class="lead">Discover fresh groceries, best deals, and trending products. Shop smart, shop modern.</p>
+    <a href="#products" class="btn btn-lg btn-light font-weight-bold">Shop Now</a>
+  </div>
+</div>
 
-		<!-- filter -->
+<!-- Categories Overview -->
+<div class="container mb-5">
+  <h3 class="mb-4">{% trans 'Shop by Category' %}</h3>
+  <div class="row">
+    {% for category in categories %}
+    <div class="col-6 col-md-3 mb-3">
+      <a href="/?category={{category.id}}" class="text-decoration-none">
+        <div class="card shadow-sm h-100 text-center p-3 category-card">
+          <span class="display-4">🍎</span>
+          <div class="mt-2 font-weight-bold">{{category.name}}</div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
 
-		<div class="col-lg-3 mx-auto">
-			<div class="list-group">
+<!-- Featured Products (first 4) -->
+<div class="container mb-5">
+  <h3 class="mb-4">{% trans 'Featured Products' %}</h3>
+  <div class="row">
+    {% for product in products|slice:':4' %}
+    <div class="col-12 col-md-3 mb-4">
+      <div class="card h-100 shadow-sm">
+        <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}}"></a>
+        <div class="card-body">
+          <h5 class="card-title"><a href="/product/{{ product.id }}/">{{product.name}}</a></h5>
+          <p class="card-text"><b>{{product.price|currency}}</b></p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
 
-				<a href="/" class="list-group-item list-group-item-action">All Products</a>
+<!-- Search bar -->
+<div class="container mb-4">
+  <form method="get" action="#products" class="mb-3">
+    <div class="input-group">
+      <input type="text" name="search" class="form-control" placeholder="{% trans 'Search products...' %}" value="{{ search_query }}">
+      {% if selected_category %}
+        <input type="hidden" name="category" value="{{ selected_category }}">
+      {% endif %}
+      <div class="input-group-append">
+        <button class="btn btn-outline-secondary" type="submit">{% trans 'Search' %}</button>
+      </div>
+    </div>
+  </form>
+</div>
 
-				{% for category in categories %}
-				<a href="/?category={{category.id}}"
-					class="list-group-item list-group-item-action">{{category.name}}</a>
-				{% endfor %}
-			</div>
-		</div>
-
-		<!-- all products -->
-		<div id='products' class="col-lg-9 mx-auto">
-			<!-- Search bar -->
-			<form method="get" action="/" class="mb-3">
-				<div class="input-group">
-					<input type="text" name="search" class="form-control" placeholder="Search products..." value="{{ search_query }}">
-					{% if selected_category %}
-						<input type="hidden" name="category" value="{{ selected_category }}">
-					{% endif %}
-					<div class="input-group-append">
-						<button class="btn btn-outline-secondary" type="submit">Search</button>
-					</div>
-				</div>
-			</form>
-			<div class="row mx-auto">
-				{% for product in products %}
-				<div class="card mx-auto mb-3" id={{product.id}} style="width: 18rem;">
-					<a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="Card image cap"></a>
-					<div class="card-body">
-						<p class="card-title"><a href="/product/{{ product.id }}/">{{product.name}}</a></p>
-						<p class="card-text"><b>{{product.price|currency}}</b></p>
-						<!-- {{product | is_in_cart:request.session.cart }} -->
-					</div>
-
-					<div class="card-footer p-0 no-gutters">
-						<div class="d-flex justify-content-between align-items-center">
-							{% if product|is_in_cart:request.session.cart %}
-							<div class="row no-gutters">
-								<form action="/#{{product.id}}" class="col-2 " method="post">
-									{% csrf_token %}
-									<input hidden type="text" name='product' value='{{product.id}}'>
-									<input hidden type="text" name='remove' value='True'>
-									<input type="submit" value=" - " class="btn btn-block btn-light border-right">
-								</form>
-								<div class="text-center col">{{product|cart_quantity:request.session.cart}} in Cart</div>
-								<form action="/#{{product.id}}" class="col-2 " method="post">
-									{% csrf_token %}
-									<input hidden type="text" name='product' value='{{product.id}}'>
-									<input type="submit" value=" + " class="btn btn-block btn-light border-left">
-								</form>
-							</div>
-							{% else %}
-							<form action="/#{{product.id}}" method="POST" class="btn-block">
-								{% csrf_token %}
-								<input hidden type="text" name='product' value='{{product.id}}'>
-								<input type="submit" class="float-right btn btn-light  form-control"
-									value="Add To Cart">
-							</form>
-							{% endif %}
-							<button class="btn btn-outline-danger btn-sm ml-2 wishlist-btn" data-product-id="{{ product.id }}">❤ Wishlist</button>
-						</div>
-					</div>
-
-				</div>
-				{% endfor %}
-			</div>
-			<!-- Pagination controls -->
-			{% if page_obj.has_other_pages %}
-			<nav aria-label="Page navigation">
-			  <ul class="pagination justify-content-center mt-4">
-				{% if page_obj.has_previous %}
-				  <li class="page-item">
-					<a class="page-link" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
-				  </li>
-				{% else %}
-				  <li class="page-item disabled"><span class="page-link">Previous</span></li>
-				{% endif %}
-				{% for num in page_obj.paginator.page_range %}
-				  {% if page_obj.number == num %}
-					<li class="page-item active"><span class="page-link">{{ num }}</span></li>
-				  {% else %}
-					<li class="page-item"><a class="page-link" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a></li>
-				  {% endif %}
-				{% endfor %}
-				{% if page_obj.has_next %}
-				  <li class="page-item">
-					<a class="page-link" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
-				  </li>
-				{% else %}
-				  <li class="page-item disabled"><span class="page-link">Next</span></li>
-				{% endif %}
-			  </ul>
-			</nav>
-			{% endif %}
-		</div>
-	</div>
+<!-- Product Grid -->
+<div id="products" class="container mb-5">
+  <h3 class="mb-4">{% trans 'All Products' %}</h3>
+  <div class="row mx-auto">
+    {% for product in products %}
+    <div class="col-12 col-md-3 mb-4">
+      <div class="card h-100 shadow-sm" id="{{product.id}}">
+        <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}}"></a>
+        <div class="card-body">
+          <h5 class="card-title"><a href="/product/{{ product.id }}/">{{product.name}}</a></h5>
+          <p class="card-text"><b>{{product.price|currency}}</b></p>
+        </div>
+        <div class="card-footer p-0 no-gutters bg-white border-0">
+          <div class="d-flex justify-content-between align-items-center">
+            {% if product|is_in_cart:request.session.cart %}
+            <div class="row no-gutters">
+              <form action="/#{{product.id}}" class="col-2 " method="post">
+                {% csrf_token %}
+                <input hidden type="text" name='product' value='{{product.id}}'>
+                <input hidden type="text" name='remove' value='True'>
+                <input type="submit" value=" - " class="btn btn-block btn-light border-right">
+              </form>
+              <div class="text-center col">{{product|cart_quantity:request.session.cart}} in Cart</div>
+              <form action="/#{{product.id}}" class="col-2 " method="post">
+                {% csrf_token %}
+                <input hidden type="text" name='product' value='{{product.id}}'>
+                <input type="submit" value=" + " class="btn btn-block btn-light border-left">
+              </form>
+            </div>
+            {% else %}
+            <form action="/#{{product.id}}" method="POST" class="btn-block">
+              {% csrf_token %}
+              <input hidden type="text" name='product' value='{{product.id}}'>
+              <input type="submit" class="float-right btn btn-light  form-control" value="Add To Cart">
+            </form>
+            {% endif %}
+            <button class="btn btn-outline-danger btn-sm ml-2 wishlist-btn" data-product-id="{{ product.id }}">❤ Wishlist</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <!-- Pagination controls -->
+  {% if page_obj.has_other_pages %}
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center mt-4">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      {% endif %}
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% else %}
+          <li class="page-item"><a class="page-link" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
 </div>
 
 <script>
