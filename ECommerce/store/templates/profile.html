@@ -2,67 +2,132 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-6 mx-auto">
-            <h3>User Profile</h3>
-            <form method="post">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-primary">Update Profile</button>
-            </form>
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-body text-center">
+          <h4 class="card-title">{{ customer.first_name }} {{ customer.last_name }}</h4>
+          <p class="card-text mb-1"><strong>Email:</strong> {{ customer.email }}</p>
+          <p class="card-text mb-1"><strong>Phone:</strong> {{ customer.phone }}</p>
+          <p class="card-text"><strong>Member since:</strong> {% if customer.date_joined %}{{ customer.date_joined|date:'Y-m-d' }}{% else %}N/A{% endif %}</p>
         </div>
-    </div>
-    <div class="row mt-5">
-        <div class="col-md-10 mx-auto">
-            <h4>Order History</h4>
-            {% if orders %}
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in orders %}
-                    <tr>
-                        <td>{{ order.id }}</td>
-                        <td>{{ order.product.name }}</td>
-                        <td>{{ order.quantity }}</td>
-                        <td>{{ order.price }}</td>
-                        <td>{{ order.date }}</td>
-                        <td>{% if order.status %}Completed{% else %}Pending{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="6">
-                            <img src="{{ order.product.image.url }}" alt="{{ order.product.name }} image" class="order-img">
-                            {% if not order.requests.exists %}
-                                <form method="post" action="{% url 'request_order_action' order.id 'cancellation' %}" style="display:inline;">
-                                    {% csrf_token %}
-                                    <input type="text" name="reason" placeholder="Reason (optional)" class="form-control mb-1" style="width:200px;display:inline-block;">
-                                    <button type="submit" class="btn btn-warning btn-sm">Request Cancellation</button>
-                                </form>
-                                <form method="post" action="{% url 'request_order_action' order.id 'return' %}" style="display:inline;">
-                                    {% csrf_token %}
-                                    <input type="text" name="reason" placeholder="Reason (optional)" class="form-control mb-1" style="width:200px;display:inline-block;">
-                                    <button type="submit" class="btn btn-info btn-sm">Request Return</button>
-                                </form>
-                            {% else %}
-                                <span class="badge badge-secondary">Request submitted: {{ order.requests.first.request_type|title }} ({{ order.requests.first.status|title }})</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p>No orders found.</p>
-            {% endif %}
+      </div>
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Order Summary</h5>
+          <p class="card-text mb-1"><strong>Total Orders:</strong> {{ total_orders }}</p>
+          <p class="card-text"><strong>Last Order:</strong> {% if last_order_date %}{{ last_order_date|date:'Y-m-d' }}{% else %}N/A{% endif %}</p>
         </div>
+      </div>
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Wishlist</h5>
+          {% if wishlist_items %}
+            <ul class="list-unstyled">
+              {% for item in wishlist_items %}
+                <li class="mb-2">
+                  <a href="/product/{{ item.product.id }}/">
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }} image" width="40" class="mr-2 rounded">
+                    {{ item.product.name }}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No items in wishlist.</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Recently Viewed</h5>
+          {% if recently_viewed %}
+            <ul class="list-unstyled">
+              {% for product in recently_viewed %}
+                <li class="mb-2">
+                  <a href="/product/{{ product.id }}/">
+                    <img src="{{ product.image.url }}" alt="{{ product.name }} image" width="40" class="mr-2 rounded">
+                    {{ product.name }}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No recently viewed products.</p>
+          {% endif %}
+        </div>
+      </div>
     </div>
+    <div class="col-md-8">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h4 class="card-title">Update Profile</h4>
+          <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Update Profile</button>
+          </form>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title">Order History</h4>
+          {% if orders %}
+          <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+              <tr>
+                <th>Order ID</th>
+                <th>Product</th>
+                <th>Image</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in orders %}
+              <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.product.name }}</td>
+                <td><img src="{{ order.product.image.url }}" alt="{{ order.product.name }} image" width="40" class="rounded"></td>
+                <td>{{ order.quantity }}</td>
+                <td>{{ order.price }}</td>
+                <td>{{ order.date }}</td>
+                <td>
+                  {% if order.status %}
+                    <span class="badge badge-success">Completed</span>
+                  {% else %}
+                    <span class="badge badge-warning">Pending</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if not order.requests.exists %}
+                    <form method="post" action="{% url 'request_order_action' order.id 'cancellation' %}" style="display:inline;">
+                      {% csrf_token %}
+                      <input type="text" name="reason" placeholder="Reason (optional)" class="form-control mb-1" style="width:120px;display:inline-block;">
+                      <button type="submit" class="btn btn-warning btn-sm">Cancel</button>
+                    </form>
+                    <form method="post" action="{% url 'request_order_action' order.id 'return' %}" style="display:inline;">
+                      {% csrf_token %}
+                      <input type="text" name="reason" placeholder="Reason (optional)" class="form-control mb-1" style="width:120px;display:inline-block;">
+                      <button type="submit" class="btn btn-info btn-sm">Return</button>
+                    </form>
+                  {% else %}
+                    <span class="badge badge-secondary">Request: {{ order.requests.first.request_type|title }} ({{ order.requests.first.status|title }})</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p>No orders found.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %} 

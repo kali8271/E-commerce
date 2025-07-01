@@ -291,7 +291,23 @@ class ProfileView(View):
         customer = Customer.objects.get(id=customer_id)
         form = CustomerProfileForm(instance=customer)
         orders = Order.get_orders_by_customer(customer_id)
-        return render(request, 'profile.html', {'form': form, 'orders': orders})
+        # Order summary
+        total_orders = orders.count()
+        last_order_date = orders[0].date if orders else None
+        # Wishlist
+        wishlist_items = Wishlist.objects.filter(customer_id=customer_id).select_related('product')
+        # Recently viewed
+        viewed_ids = request.session.get('recently_viewed', [])
+        recently_viewed = Product.objects.filter(id__in=viewed_ids) if viewed_ids else []
+        return render(request, 'profile.html', {
+            'form': form,
+            'orders': orders,
+            'total_orders': total_orders,
+            'last_order_date': last_order_date,
+            'wishlist_items': wishlist_items,
+            'recently_viewed': recently_viewed,
+            'customer': customer
+        })
 
     def post(self, request):
         customer_id = request.session.get('customer')
