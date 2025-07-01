@@ -136,6 +136,7 @@ class Cart(View):
         if items:
             ids = list(items.keys())
             products = Product.get_products_by_id(ids)
+            any_out_of_stock = any(getattr(product, 'stock', 1) <= 0 for product in products)
             if coupon_code:
                 from .models import Coupon
                 try:
@@ -145,9 +146,9 @@ class Cart(View):
                     coupon = None
                     request.session['coupon_code'] = ''
             total, discount = cart_total_with_coupon(products, items, coupon)
-            return render(request, 'cart.html', {'products': products, 'coupon': coupon, 'discount': discount, 'total': total})
+            return render(request, 'cart.html', {'products': products, 'coupon': coupon, 'discount': discount, 'total': total, 'any_out_of_stock': any_out_of_stock})
         else:
-            return render(request, 'cart.html', {'products': [], 'coupon': None, 'discount': 0, 'total': 0})
+            return render(request, 'cart.html', {'products': [], 'coupon': None, 'discount': 0, 'total': 0, 'any_out_of_stock': False})
 
 
 
@@ -155,6 +156,11 @@ class CheckOut(View):
     def post(self, request):
         address = request.POST.get('address')
         phone = request.POST.get('phone')
+        payment_method = request.POST.get('payment_method')
+        mock_payment = request.POST.get('mock_payment')
+        if not address or not phone or not payment_method:
+            messages.error(request, 'All fields are required, including payment method.')
+            return redirect('cart')
         customer = request.session.get('customer')
         cart = CartHelper(request.session)
         items = cart.get_items()
@@ -168,15 +174,20 @@ class CheckOut(View):
             except Coupon.DoesNotExist:
                 coupon = None
         total, discount = cart_total_with_coupon(products, items, coupon)
-        print(address, phone, customer, items, products, coupon, discount, total)
+        print(address, phone, payment_method, customer, items, products, coupon, discount, total)
         order_ids = []
         for product in products:
+            payment_status = 'paid' if payment_method != 'cod' and mock_payment == 'success' else 'pending'
+            transaction_id = 'MOCKSTRIPE123456' if payment_status == 'paid' else ''
             order = Order(customer=Customer(id=customer),
                           product=product,
                           price=product.price,
                           address=address,
                           phone=phone,
-                          quantity=items.get(str(product.id)))
+                          quantity=items.get(str(product.id)),
+                          payment_method=payment_method,
+                          payment_status=payment_status,
+                          transaction_id=transaction_id)
             order.save()
             order_ids.append(order.id)
         cart.clear()
@@ -189,7 +200,7 @@ class CheckOut(View):
             # Send order confirmation email
             subject = 'Order Confirmation - E-Commerce Site'
             order_list = "\n".join([f"- {Product.objects.get(id=pid).name} (Qty: {items.get(str(pid), 1)})" for pid in items.keys()])
-            message = f"Dear {user_obj.first_name},\n\nThank you for your order!\n\nOrder Details:\n{order_list}\n\nTotal: ₹{total}\nDiscount: ₹{discount}\n\nWe will notify you when your order is shipped.\n\nBest regards,\nE-Commerce Team"
+            message = f"Dear {user_obj.first_name},\n\nThank you for your order!\n\nOrder Details:\n{order_list}\n\nTotal: ₹{total}\nDiscount: ₹{discount}\nPayment Method: {payment_method}\n\nWe will notify you when your order is shipped.\n\nBest regards,\nE-Commerce Team"
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user_obj.email], fail_silently=True)
         return redirect('cart')
     
@@ -482,6 +493,8 @@ def newsletter_signup(request):
                 messages.success(request, 'Thank you for subscribing!')
             else:
                 messages.info(request, 'You are already subscribed.')
+        else:
+            messages.error(request, 'Please enter a valid email address.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     
 def add_to_compare(request, product_id):

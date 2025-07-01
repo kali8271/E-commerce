@@ -83,6 +83,9 @@
                 <th>Price</th>
                 <th>Date</th>
                 <th>Status</th>
+                <th>Payment</th>
+                <th>Status</th>
+                <th>Txn ID</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -102,6 +105,9 @@
                     <span class="badge badge-warning">Pending</span>
                   {% endif %}
                 </td>
+                <td>{{ order.get_payment_method_display }}</td>
+                <td>{{ order.payment_status|title }}</td>
+                <td>{% if order.transaction_id %}{{ order.transaction_id }}{% else %}-{% endif %}</td>
                 <td>
                   {% if not order.requests.exists %}
                     <form method="post" action="{% url 'request_order_action' order.id 'cancellation' %}" style="display:inline;">

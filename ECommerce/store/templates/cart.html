@@ -56,8 +56,11 @@
         <div class="alert alert-success">Discount: -{{ discount }}</div>
         {% endif %}
         <div class="alert alert-info">Total: {{ total }}</div>
+        {% if any_out_of_stock %}
+            <div class="alert alert-danger">Some items in your cart are out of stock. Please remove them to proceed.</div>
+        {% endif %}
         <div class="m-3 p-3">
-            <a href="#" data-toggle="modal" data-target="#exampleModal" class="btn btn-outline-info border rounded  col-lg-3 float-right">Check out</a>
+            <button class="btn btn-primary btn-block" data-toggle="modal" data-target="#exampleModal" {% if not products or any_out_of_stock %}disabled{% endif %}>Proceed to Checkout</button>
         </div>
    </div>
 </div>
@@ -80,20 +83,52 @@
         </div>
         <div class="modal-body">
           <div class="m-2 p-3">
-            <form action="/check-out" method="POST">
+            <form id="checkout-form" action="/check-out" method="POST">
                 {% csrf_token %}
                 <div class="form-group">
-                  <label for="">Address</label>
-                  <input type="text" name="address" id="" class="form-control" placeholder="" aria-describedby="helpId">
-                  
+                  <label for="address">Address</label>
+                  <input type="text" name="address" id="address" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label for="">Phone</label>
-                    <input type="text" name="phone" id="" class="form-control" placeholder="" aria-describedby="helpId">
-                  </div>
-
-                  <input type="submit" class="btn float-right btn-outline-info col-lg-6" value="Check out">
+                  <label for="phone">Phone</label>
+                  <input type="text" name="phone" id="phone" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label for="payment_method">Payment Method</label>
+                  <select name="payment_method" id="payment_method" class="form-control" required>
+                    <option value="">Select a payment method</option>
+                    <option value="cod">Cash on Delivery</option>
+                    <option value="card">Credit/Debit Card</option>
+                    <option value="upi">UPI</option>
+                    <option value="netbanking">Net Banking</option>
+                  </select>
+                </div>
+                <input type="hidden" name="mock_payment" id="mock_payment" value="">
+                <input type="submit" class="btn btn-info btn-block" value="Check out" id="checkout-btn">
+                <button type="button" class="btn btn-success btn-block mt-2" id="pay-now-btn" style="display:none;">Pay Now (Mock Stripe)</button>
             </form>
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                var paymentSelect = document.getElementById('payment_method');
+                var payNowBtn = document.getElementById('pay-now-btn');
+                var checkoutBtn = document.getElementById('checkout-btn');
+                var mockPayment = document.getElementById('mock_payment');
+                paymentSelect.addEventListener('change', function() {
+                  if (['card', 'upi', 'netbanking'].includes(this.value)) {
+                    payNowBtn.style.display = '';
+                    checkoutBtn.style.display = 'none';
+                  } else {
+                    payNowBtn.style.display = 'none';
+                    checkoutBtn.style.display = '';
+                  }
+                });
+                payNowBtn.addEventListener('click', function() {
+                  // Simulate payment success
+                  mockPayment.value = 'success';
+                  document.getElementById('checkout-form').submit();
+                });
+              });
+            </script>
           </div>
         </div>
         

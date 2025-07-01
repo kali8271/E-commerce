@@ -257,8 +257,13 @@
         <div class="card h-100 shadow-sm">
           <a href="/product/{{ product.id }}/"><img class="card-img-top" src="{{product.image.url}}" alt="{{product.name}} image"></a>
           <div class="card-body p-2">
-            <h6 class="card-title mb-1"><a href="/product/{{ product.id }}/">{{product.name}}</a></h6>
+            <h5 class="card-title"><a href="/product/{{ product.id }}/">{{product.name}}</a></h5>
             <span class="badge badge-primary">₹{{product.price}}</span>
+            {% if product.stock > 0 %}
+              <span class="badge badge-success ml-2">In Stock</span>
+            {% else %}
+              <span class="badge badge-danger ml-2">Out of Stock</span>
+            {% endif %}
           </div>
         </div>
       </div>

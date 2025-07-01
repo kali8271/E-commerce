@@ -33,6 +33,7 @@ class Product(models.Model):
     tags = models.ManyToManyField('Tag', blank=True)
     description = models.CharField(max_length=200, default=' ')
     image = models.ImageField(upload_to='Products/')
+    stock = models.IntegerField(default=0)
 
     @classmethod
     def get_all_products_by_categoryid(cls, category_id):
@@ -74,6 +75,12 @@ class Customer(models.Model):
         return  False
     
 class Order(models.Model):
+    PAYMENT_METHOD_CHOICES = [
+        ('cod', 'Cash on Delivery'),
+        ('card', 'Credit/Debit Card'),
+        ('upi', 'UPI'),
+        ('netbanking', 'Net Banking'),
+    ]
     product = models.ForeignKey(Product,on_delete=models.CASCADE)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
@@ -82,6 +89,9 @@ class Order(models.Model):
     phone = models.CharField(max_length=50, default='', blank=True)
     date = models.DateField(default=datetime.datetime.today)
     status = models.BooleanField(default=False)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='cod')
+    payment_status = models.CharField(max_length=20, default='pending')
+    transaction_id = models.CharField(max_length=100, blank=True, null=True)
 
     def placeOrder(self):
         self.save()

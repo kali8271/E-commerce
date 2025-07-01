@@ -12,8 +12,14 @@ class AdminCategory(admin.ModelAdmin):
     list_display = ['name']
 
 
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'brand', 'price', 'stock')
+    list_filter = ('category', 'brand')
+    search_fields = ('name',)
+
+
 # Register your models here.
-admin.site.register(Product, AdminProduct)
+admin.site.register(Product, ProductAdmin)
 admin.site.register(Category , AdminCategory)
 admin.site.register(Customer )
 admin.site.register(Order )
